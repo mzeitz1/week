@@ -40,7 +40,8 @@
   button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
 
   /* Top bar */
-  .top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; gap: 12px; }
+  /* Controls stay on the left: Notion overlays its own buttons on an embed's top-right corner. */
+  .top { display: flex; align-items: baseline; margin-bottom: 8px; gap: 14px; }
   .title { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
   .title span { color: var(--muted); font-weight: 500; }
   .top button { font-size: 11px; color: var(--muted); }
@@ -227,13 +228,14 @@
     // Always leave an empty line to click into, and never fewer than LINES.
     ul.style.minHeight = `${Math.max(LINES, tasks.length + 1) * lineHeight()}px`;
 
-    // Switching from one edit to another: act on mousedown, before the open input's blur re-renders.
+    // While a line is open for typing, keep its blur from re-rendering under the pointer.
+    // Pressing a task is left to the drag code (drag it, or edit it on release);
+    // pressing empty space switches to a new line right away.
     ul.addEventListener('mousedown', e => {
       if (e.button !== 0 || e.target.closest('input, .check')) return;
       if (!document.querySelector('li input')) return;
       e.preventDefault();
-      const li = e.target.closest('li.task');
-      startEdit(key, li ? li.dataset.id : null);
+      if (!e.target.closest('li.task')) startEdit(key, null);
     });
     ul.addEventListener('click', e => {
       if (e.target.closest('input, .check, li.task')) return;
@@ -246,13 +248,15 @@
 
   // ---------- drag & drop (pointer based; mouse drags right away, touch after a short hold) ----------
   function onPress(e, key, id, li) {
-    if (e.button !== 0 || e.target.closest('.check') || document.querySelector('li input')) return;
+    if (e.button !== 0 || e.target.closest('.check')) return;
     press = { key, id, li, x: e.clientX, y: e.clientY, touch: e.pointerType !== 'mouse', started: false, timer: 0 };
     if (press.touch) press.timer = setTimeout(() => press && beginDrag(press.x, press.y), 250);
   }
 
   document.addEventListener('pointermove', e => {
     if (!press) return;
+    // Button was released somewhere we didn't hear about (e.g. outside the Notion embed): drop here.
+    if (press.started && !press.touch && e.buttons === 0) { moveDrag(e.clientX, e.clientY); return endDrag(); }
     if (!press.started) {
       const dist = Math.hypot(e.clientX - press.x, e.clientY - press.y);
       if (!press.touch && dist > 4) beginDrag(e.clientX, e.clientY);
@@ -271,6 +275,12 @@
     startEdit(p.key, p.id);
   });
 
+  // Leaving the embed mid-drag: finish the drop where the pointer last was.
+  document.documentElement.addEventListener('pointerleave', e => {
+    if (press && press.started && !press.touch && e.buttons === 0) endDrag();
+  });
+  window.addEventListener('blur', () => { if (press && press.started) endDrag(); });
+
   document.addEventListener('pointercancel', () => {
     if (!press) return;
     clearTimeout(press.timer);
@@ -282,8 +292,14 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && press && press.started) cancelDrag(); });
 
   function beginDrag(x, y) {
+    // Close any line that's open for typing first; that re-renders, so find the task again.
+    const active = document.querySelector('li input');
+    if (active) {
+      active.blur();
+      press.li = document.querySelector(`.day[data-key="${press.key}"] li.task[data-id="${press.id}"]`);
+    }
     const { li } = press;
-    if (!li.isConnected) { press = null; return; }
+    if (!li || !li.isConnected) { press = null; return; }
     press.started = true;
     const r = li.getBoundingClientRect();
     press.dx = x - r.left;
