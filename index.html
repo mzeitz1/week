@@ -11,131 +11,125 @@
     --bg: #ffffff;
     --ink: #1f1f1f;
     --muted: #a3a3a3;
-    --line: #ededed;
+    --line: #ececec;
     --rule: #1f1f1f;
     --accent: #ff5a4e;
-    --hover: #f7f7f7;
+    --hover: #f5f5f5;
     --done: #c4c4c4;
-    --drop: #ff5a4e;
+    --ph: rgba(255, 90, 78, .08);
+    --lh: 28px;            /* height of one line */
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #191919; --ink: #e8e8e8; --muted: #6f6f6f; --line: #2a2a2a;
-      --rule: #e8e8e8; --hover: #222; --done: #555;
+      --rule: #e8e8e8; --hover: #222; --done: #555; --ph: rgba(255, 90, 78, .12);
     }
   }
   :root[data-theme="dark"] {
     --bg: #191919; --ink: #e8e8e8; --muted: #6f6f6f; --line: #2a2a2a;
-    --rule: #e8e8e8; --hover: #222; --done: #555;
+    --rule: #e8e8e8; --hover: #222; --done: #555; --ph: rgba(255, 90, 78, .12);
   }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--ink); }
   body {
     font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 14px; padding: 20px 16px 28px; -webkit-font-smoothing: antialiased;
+    font-size: 13px; padding: 10px 14px 14px; -webkit-font-smoothing: antialiased;
   }
+  body.dragging, body.dragging * { cursor: grabbing !important; user-select: none; }
   button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
 
   /* Top bar */
-  .top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; gap: 12px; }
-  .title { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; gap: 12px; }
+  .title { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
   .title span { color: var(--muted); font-weight: 500; }
-  .nav { display: flex; align-items: center; gap: 4px; }
-  .nav button { height: 28px; min-width: 28px; padding: 0 8px; border-radius: 6px; color: var(--muted); font-weight: 500; }
-  .nav button:hover { background: var(--hover); color: var(--ink); }
-  .nav .arrow { font-size: 18px; line-height: 1; }
+  .top button { font-size: 11px; color: var(--muted); }
+  .top button:hover { color: var(--ink); }
 
-  /* Grid */
-  .week { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 30px 18px; }
+  /* 4 x 2 grid; boxes in a row share the tallest box's height */
+  .week { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 16px; }
+  @media (max-width: 640px) { .week { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 360px) { .week { grid-template-columns: minmax(0, 1fr); } }
 
-  @media (max-width: 700px) {
-    .week { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 18px; }
-  }
-  @media (max-width: 420px) {
-    .week { grid-template-columns: minmax(0, 1fr); }
-    .title { font-size: 22px; }
-  }
-
-  /* Day column */
+  .day { display: flex; flex-direction: column; min-width: 0; }
   .day header {
     display: flex; align-items: baseline; justify-content: space-between;
-    border-bottom: 2px solid var(--rule); padding-bottom: 6px;
+    border-bottom: 2px solid var(--rule); padding-bottom: 3px;
   }
-  .day .num { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
-  .day .dow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .day .num { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .day .dow { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
   .day.today header { border-color: var(--accent); }
   .day.today .num, .day.today .dow { color: var(--accent); }
   .day.past .num { color: var(--muted); }
   .day.past .dow::after { content: " · overdue"; color: var(--accent); }
-  .day.someday .num { font-size: 20px; }
 
-  ul { list-style: none; margin: 0; padding: 0; }
-  li {
-    height: 33px; border-bottom: 1px solid var(--line);
-    display: flex; align-items: center; gap: 6px; position: relative;
+  /* Lined paper: lines are drawn by the background, so empty space below tasks is still ruled */
+  ul {
+    list-style: none; margin: 0; padding: 0; flex: 1; cursor: text;
+    background-image: linear-gradient(to bottom, transparent calc(var(--lh) - 1px), var(--line) calc(var(--lh) - 1px));
+    background-size: 100% var(--lh);
   }
-  li.blank { cursor: text; }
-  li.task { cursor: text; }
+  li { height: var(--lh); display: flex; align-items: center; gap: 6px; position: relative; }
+  li.task { cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   li.task .text {
-    flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    padding: 0 2px;
+    flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 3px;
   }
   li.task.done .text { color: var(--done); text-decoration: line-through; }
   li.task .check {
-    width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--muted);
-    flex: none; opacity: 0; transition: opacity .12s;
-    display: grid; place-items: center;
+    width: 15px; height: 15px; margin-right: 3px; border-radius: 50%; border: 1.5px solid var(--muted);
+    flex: none; opacity: 0; transition: opacity .12s; display: grid; place-items: center; cursor: pointer;
   }
   li.task:hover .check, li.task.done .check { opacity: 1; }
   li.task.done .check { background: var(--done); border-color: var(--done); }
-  li.task.done .check::after { content: ""; width: 5px; height: 8px; border: solid var(--bg); border-width: 0 1.5px 1.5px 0; transform: translateY(-1px) rotate(45deg); }
-  @media (hover: none) { li.task .check { opacity: .6; } }
-  li.task.dragging { opacity: .35; }
-  li.drop-before::before {
-    content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--drop);
+  li.task.done .check::after {
+    content: ""; width: 4px; height: 7px; border: solid var(--bg); border-width: 0 1.5px 1.5px 0;
+    transform: translateY(-1px) rotate(45deg);
   }
+  @media (hover: none) { li.task .check { opacity: .6; } }
+
+  li.placeholder { background: var(--ph); border-radius: 4px; height: calc(var(--lh) - 1px); margin-bottom: 1px; }
+  li.ghost {
+    position: fixed; z-index: 10; pointer-events: none; margin: 0; border-radius: 4px;
+    background: var(--bg); box-shadow: 0 6px 20px rgba(0, 0, 0, .18), 0 0 0 1px var(--line);
+    transform: rotate(-1.5deg);
+  }
+  li.ghost .check { opacity: 0; }
 
   li input {
     width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink);
-    font: inherit; padding: 0 2px; height: 100%;
+    font: inherit; padding: 0 3px; height: 100%;
   }
-
-  .foot { margin-top: 26px; display: flex; justify-content: flex-end; gap: 14px; }
-  .foot button { font-size: 12px; color: var(--muted); }
-  .foot button:hover { color: var(--ink); }
 </style>
 </head>
 <body>
   <div class="top">
     <h1 class="title" id="title"></h1>
+    <button id="clearDone" title="Delete completed tasks">Clear completed</button>
   </div>
 
   <div class="week" id="week"></div>
-
-  <div class="foot">
-    <button id="clearDone" title="Delete completed tasks">Clear completed</button>
-  </div>
 
 <script>
 (() => {
   const KEY = 'weekly-todo-v1';
   const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const DAYS = 7;       // day boxes shown (plus one "Someday" box = 4x2 grid)
-  const LINES = 8;      // minimum lines per box
+  const LINES = 4;      // default lines per box; boxes grow as they fill
   const SOMEDAY = 'someday';
   const isDay = key => /^\d{4}-\d{2}-\d{2}$/.test(key);
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const lineHeight = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lh')) || 28;
 
   let data = migrate(load());
   let shownToday = iso(new Date());
   let editing = null;   // { key, id }  id === null means a new task at the end
-  let drag = null;      // { key, id }
+  let press = null;     // pointer press on a task; becomes a drag once it moves
 
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; }
   }
   function save() {
+    for (const k of Object.keys(data)) if (!data[k].length) delete data[k];
     try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
   }
   const uid = () => Math.random().toString(36).slice(2, 10);
@@ -147,6 +141,7 @@
     }
     return d;
   }
+
   function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
   function iso(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -183,102 +178,174 @@
     for (const d of days) {
       const key = iso(d);
       const cls = key === todayKey ? 'today' : key < todayKey ? 'past' : '';
-      week.appendChild(column(key, d.getDate(), DOW[d.getDay()], LINES, cls));
+      week.appendChild(column(key, d.getDate(), DOW[d.getDay()], cls));
     }
-    week.appendChild(column(SOMEDAY, 'Someday', '', LINES, 'someday'));
+    week.appendChild(column(SOMEDAY, 'Someday', '', 'someday'));
 
     const input = document.querySelector('li input');
     if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
   }
 
-  function column(key, num, dow, minLines, cls) {
+  function column(key, num, dow, cls) {
     const sec = document.createElement('section');
     sec.className = `day ${cls}`;
     sec.dataset.key = key;
     sec.innerHTML = `<header><span class="num">${num}</span><span class="dow">${dow}</span></header>`;
+
     const ul = document.createElement('ul');
     const tasks = list(key);
-
-    tasks.forEach(t => {
+    for (const t of tasks) {
       const li = document.createElement('li');
       li.dataset.id = t.id;
       if (editing && editing.key === key && editing.id === t.id) {
         li.appendChild(makeInput(key, t.id, t.text));
       } else {
         li.className = 'task' + (t.done ? ' done' : '');
-        li.draggable = true;
         const span = document.createElement('span');
         span.className = 'text';
         span.textContent = t.text;
         const check = document.createElement('button');
         check.className = 'check';
         check.setAttribute('aria-label', t.done ? 'Mark not done' : 'Mark done');
-        check.addEventListener('click', e => { e.stopPropagation(); t.done = !t.done; save(); render(); });
-        li.append(span, check);
-        bindEdit(li, key, t.id);
-        li.addEventListener('dragstart', e => {
-          drag = { key, id: t.id };
-          li.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', t.text);
+        check.addEventListener('mousedown', e => e.preventDefault()); // keep an open edit from re-rendering first
+        check.addEventListener('click', e => {
+          e.stopPropagation();
+          document.querySelector('li input')?.blur();
+          t.done = !t.done; save(); render();
         });
-        li.addEventListener('dragend', () => { drag = null; clearDropMarks(); render(); });
+        li.append(span, check);
+        li.addEventListener('pointerdown', e => onPress(e, key, t.id, li));
       }
       ul.appendChild(li);
-    });
-
+    }
     const isNew = editing && editing.key === key && editing.id === null;
     if (isNew) {
       const li = document.createElement('li');
       li.appendChild(makeInput(key, null, ''));
       ul.appendChild(li);
     }
-    const blanks = Math.max(1, minLines - tasks.length - (isNew ? 1 : 0));
-    for (let b = 0; b < blanks; b++) {
-      const li = document.createElement('li');
-      li.className = 'blank';
-      bindEdit(li, key, null);
-      ul.appendChild(li);
-    }
+    // Always leave an empty line to click into, and never fewer than LINES.
+    ul.style.minHeight = `${Math.max(LINES, tasks.length + 1) * lineHeight()}px`;
 
-    // drag & drop target
-    ul.addEventListener('dragover', e => {
-      if (!drag) return;
+    // Switching from one edit to another: act on mousedown, before the open input's blur re-renders.
+    ul.addEventListener('mousedown', e => {
+      if (e.button !== 0 || e.target.closest('input, .check')) return;
+      if (!document.querySelector('li input')) return;
       e.preventDefault();
-      clearDropMarks();
-      const target = dropTarget(ul, e.clientY);
-      (target || ul.querySelector('li.blank'))?.classList.add('drop-before');
+      const li = e.target.closest('li.task');
+      startEdit(key, li ? li.dataset.id : null);
     });
-    ul.addEventListener('dragleave', e => { if (!ul.contains(e.relatedTarget)) clearDropMarks(); });
-    ul.addEventListener('drop', e => {
-      if (!drag) return;
-      e.preventDefault();
-      const target = dropTarget(ul, e.clientY);
-      const from = list(drag.key);
-      const idx = from.findIndex(t => t.id === drag.id);
-      if (idx < 0) return;
-      const [task] = from.splice(idx, 1);
-      const to = list(key);
-      let at = target ? to.findIndex(t => t.id === target.dataset.id) : to.length;
-      if (at < 0) at = to.length;
-      to.splice(at, 0, task);
-      drag = null;
-      save(); render();
+    ul.addEventListener('click', e => {
+      if (e.target.closest('input, .check, li.task')) return;
+      startEdit(key, null);
     });
 
     sec.appendChild(ul);
     return sec;
   }
 
-  function dropTarget(ul, y) {
-    for (const li of ul.querySelectorAll('li.task:not(.dragging)')) {
-      const r = li.getBoundingClientRect();
-      if (y < r.top + r.height / 2) return li;
-    }
-    return null;
+  // ---------- drag & drop (pointer based; mouse drags right away, touch after a short hold) ----------
+  function onPress(e, key, id, li) {
+    if (e.button !== 0 || e.target.closest('.check') || document.querySelector('li input')) return;
+    press = { key, id, li, x: e.clientX, y: e.clientY, touch: e.pointerType !== 'mouse', started: false, timer: 0 };
+    if (press.touch) press.timer = setTimeout(() => press && beginDrag(press.x, press.y), 250);
   }
-  function clearDropMarks() {
-    document.querySelectorAll('.drop-before').forEach(el => el.classList.remove('drop-before'));
+
+  document.addEventListener('pointermove', e => {
+    if (!press) return;
+    if (!press.started) {
+      const dist = Math.hypot(e.clientX - press.x, e.clientY - press.y);
+      if (!press.touch && dist > 4) beginDrag(e.clientX, e.clientY);
+      else if (press.touch && dist > 8) { clearTimeout(press.timer); press = null; } // they're scrolling
+      return;
+    }
+    moveDrag(e.clientX, e.clientY);
+  });
+
+  document.addEventListener('pointerup', () => {
+    if (!press) return;
+    clearTimeout(press.timer);
+    const p = press;
+    if (p.started) return endDrag();
+    press = null;
+    startEdit(p.key, p.id);
+  });
+
+  document.addEventListener('pointercancel', () => {
+    if (!press) return;
+    clearTimeout(press.timer);
+    if (press.started) cancelDrag(); else press = null;
+  });
+
+  // Once a touch drag has started, stop the page from scrolling underneath it.
+  document.addEventListener('touchmove', e => { if (press && press.started) e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && press && press.started) cancelDrag(); });
+
+  function beginDrag(x, y) {
+    const { li } = press;
+    if (!li.isConnected) { press = null; return; }
+    press.started = true;
+    const r = li.getBoundingClientRect();
+    press.dx = x - r.left;
+    press.dy = y - r.top;
+
+    // Freeze box heights so nothing jumps while the task is lifted out.
+    document.querySelectorAll('.day ul').forEach(u => { u.style.minHeight = `${u.offsetHeight}px`; });
+
+    const ghost = li.cloneNode(true);
+    ghost.classList.add('ghost');
+    Object.assign(ghost.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px` });
+    document.body.appendChild(ghost);
+    press.ghost = ghost;
+
+    li.className = 'placeholder';
+    li.replaceChildren();
+    document.body.classList.add('dragging');
+    navigator.vibrate?.(10);
+    moveDrag(x, y);
+  }
+
+  function moveDrag(x, y) {
+    const { ghost, li: ph } = press;
+    ghost.style.left = `${x - press.dx}px`;
+    ghost.style.top = `${y - press.dy}px`;
+
+    const ul = document.elementFromPoint(x, y)?.closest('.day')?.querySelector('ul');
+    if (!ul) return;
+    let before = null;
+    for (const t of ul.querySelectorAll('li.task')) {
+      const r = t.getBoundingClientRect();
+      if (y < r.top + r.height / 2) { before = t; break; }
+    }
+    if (before) { if (ph.nextElementSibling !== before) ul.insertBefore(ph, before); }
+    else if (ph.parentNode !== ul || ph.nextElementSibling) ul.appendChild(ph);
+  }
+
+  function endDrag() {
+    const { key, id, li: ph, ghost } = press;
+    press = null;
+    ghost.remove();
+    document.body.classList.remove('dragging');
+
+    const toKey = ph.closest('.day').dataset.key;
+    let index = 0;
+    for (let n = ph.previousElementSibling; n; n = n.previousElementSibling) if (n.classList.contains('task')) index++;
+
+    const from = list(key);
+    const i = from.findIndex(t => t.id === id);
+    if (i >= 0) {
+      const [task] = from.splice(i, 1);
+      list(toKey).splice(index, 0, task);
+      save();
+    }
+    render();
+  }
+
+  function cancelDrag() {
+    press.ghost.remove();
+    press = null;
+    document.body.classList.remove('dragging');
+    render();
   }
 
   // ---------- editing ----------
@@ -286,7 +353,7 @@
     const input = document.createElement('input');
     input.value = value;
     let finished = false;
-    const finish = (next) => {
+    const finish = next => {
       if (finished) return;
       finished = true;
       commit(key, id, input.value);
@@ -306,16 +373,6 @@
     return input;
   }
 
-  // If another line is being edited, its blur re-renders before "click" fires,
-  // so switch lines on mousedown instead.
-  function bindEdit(li, key, id) {
-    li.addEventListener('mousedown', e => {
-      if (e.button !== 0 || e.target.closest('.check')) return;
-      if (document.querySelector('li input')) { e.preventDefault(); startEdit(key, id); }
-    });
-    li.addEventListener('click', () => startEdit(key, id));
-  }
-
   function startEdit(key, id) {
     const active = document.querySelector('li input');
     if (active) active.blur(); // commits the current edit first
@@ -333,16 +390,12 @@
       if (i < 0) return;
       if (text) tasks[i].text = text; else tasks.splice(i, 1);
     }
-    if (!tasks.length) delete data[key];
     save();
   }
 
   // ---------- controls ----------
   document.getElementById('clearDone').onclick = () => {
-    for (const key of Object.keys(data)) {
-      data[key] = data[key].filter(t => !t.done);
-      if (!data[key].length) delete data[key];
-    }
+    for (const key of Object.keys(data)) data[key] = data[key].filter(t => !t.done);
     save(); render();
   };
 
@@ -350,15 +403,15 @@
   function scheduleMidnight() {
     const now = new Date();
     const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
-    setTimeout(() => { if (!editing) render(); scheduleMidnight(); }, next - now);
+    setTimeout(() => { if (!editing && !press) render(); scheduleMidnight(); }, next - now);
   }
   scheduleMidnight();
-  const refreshIfNewDay = () => { if (!editing && iso(new Date()) !== shownToday) render(); };
+  const refreshIfNewDay = () => { if (!editing && !press && iso(new Date()) !== shownToday) render(); };
   document.addEventListener('visibilitychange', refreshIfNewDay);
   window.addEventListener('focus', refreshIfNewDay);
 
   // keep in sync if the widget is open in two places (e.g. two Notion pages)
-  window.addEventListener('storage', e => { if (e.key === KEY) { data = load(); render(); } });
+  window.addEventListener('storage', e => { if (e.key === KEY && !editing && !press) { data = load(); render(); } });
 
   render();
 })();
